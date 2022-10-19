@@ -1,0 +1,45 @@
+version: '3.8'
+
+networks:
+  app:
+
+services:
+  load-balancer:
+    image: nginx:stable
+    networks:
+      - app
+    user: nginx:nginx
+    tmpfs: /tmp
+    ports:
+      - 8000:8000
+    environment:
+      - NGINX_ENTRYPOINT_QUIET_LOGS=0
+    volumes:
+      - ./nginx/:/etc/nginx/:ro
+
+  blue:
+    image: app:${BLUE_VERSION:-blue}
+    build:
+      context: app
+      args:
+        VERSION: ${BLUE_VERSION:-blue}
+
+    networks:
+      - app
+    ports:
+      - 8081:8080
+    depends_on:
+      - load-balancer
+
+  green:
+    image: app:${GREEN_VERSION:-green}
+    build:
+      context: app
+      args:
+        VERSION: ${GREEN_VERSION:-green}
+    networks:
+      - app
+    ports:
+      - 8082:8080
+    depends_on:
+      - load-balancer
